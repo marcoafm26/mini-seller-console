@@ -1,7 +1,15 @@
-import './App.css';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { LeadsPage } from './pages/LeadsPage';
 
 function App() {
-  return <></>;
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Navigate to="/leads" replace />} />
+        <Route path="/leads" element={<LeadsPage />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;
