@@ -1,21 +1,76 @@
-import { useLeadsData } from '../../hooks/useLeadsData.ts';
+import type { ApiError } from '../../interfaces/api/error';
 import type { Lead, LeadStatus } from '../../interfaces/lead';
 import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button.tsx';
-import { FilterSelect } from '../ui/FilterSelect.tsx';
-import { Pagination } from '../ui/Pagination.tsx';
-import { SearchInput } from '../ui/SearchInput.tsx';
-import type { TableColumn } from '../ui/Table.tsx';
-import { Table } from '../ui/Table.tsx';
+import { Button } from '../ui/Button';
+import { FilterSelect } from '../ui/FilterSelect';
+import { Pagination } from '../ui/Pagination';
+import { SearchInput } from '../ui/SearchInput';
+import type { TableColumn } from '../ui/Table';
+import { Table } from '../ui/Table';
 import { formatDate, getScoreColor } from '../utils/formatting';
+
+// Filter options
+const statusOptions = [
+  { value: 'All', label: 'All' },
+  { value: 'New', label: 'New' },
+  { value: 'Contacted', label: 'Contacted' },
+  { value: 'Qualified', label: 'Qualified' },
+  { value: 'Lost', label: 'Lost' },
+  { value: 'Converted', label: 'Converted' },
+];
+
+const dateRangeOptions = [
+  { value: 'All', label: 'All Time' },
+  { value: '1d', label: 'Last 24 hours' },
+  { value: '7d', label: 'Last 7 days' },
+  { value: '30d', label: 'Last 30 days' },
+  { value: '1y', label: 'Last year' },
+];
+
+const sortByOptions = [
+  { value: 'score', label: 'Score' },
+  { value: 'name', label: 'Name' },
+  { value: 'createdAt', label: 'Created Date' },
+  { value: 'updatedAt', label: 'Updated Date' },
+];
+
+const sortOrderOptions = [
+  { value: 'desc', label: 'Descending' },
+  { value: 'asc', label: 'Ascending' },
+];
+
+// Interface for props
+interface UserFilters {
+  search: string;
+  status: LeadStatus | 'All';
+  dateRange: '1d' | '7d' | '30d' | '1y' | 'All';
+  sortBy: 'score' | 'name' | 'createdAt' | 'updatedAt';
+  sortOrder: 'asc' | 'desc';
+}
+
+interface PaginationState {
+  currentPage: number;
+  totalPages: number;
+  total: number;
+  limit: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
 
 interface LeadsTableProps {
   leads: Lead[];
   loading?: boolean;
+  error?: ApiError | null;
+  filters: UserFilters;
+  updateFilters: (filters: Partial<UserFilters>) => void;
+  clearFilters: () => void;
+  pagination: PaginationState;
+  changePage: (page: number) => void;
+  isEmpty: boolean;
   onViewLead?: (leadId: string) => void;
-  //   onConvertLead?: (leadId: string) => void;
 }
 
+// Table columns definition
 const leadColumns: TableColumn<Lead>[] = [
   {
     key: 'name',
@@ -72,74 +127,43 @@ const leadColumns: TableColumn<Lead>[] = [
   },
 ];
 
-const statusOptions = [
-  { value: 'All', label: 'All' },
-  { value: 'New', label: 'New' },
-  { value: 'Contacted', label: 'Contacted' },
-  { value: 'Qualified', label: 'Qualified' },
-  { value: 'Lost', label: 'Lost' },
-];
-
-const dateRangeOptions = [
-  { value: '1d', label: 'Last 24 hours' },
-  { value: '7d', label: 'Last 7 days' },
-  { value: '30d', label: 'Last 30 days' },
-  { value: '1y', label: 'Last 1 year' },
-  { value: 'All', label: 'All' },
-];
-
-const sortByOptions = [
-  { value: 'score', label: 'Score' },
-  { value: 'name', label: 'Name' },
-  { value: 'createdAt', label: 'Created' },
-  { value: 'updatedAt', label: 'Updated' },
-];
-
-const sortOrderOptions = [
-  { value: 'asc', label: 'Ascending' },
-  { value: 'desc', label: 'Descending' },
-];
-
-export const LeadsTable = ({ onViewLead }: LeadsTableProps) => {
-  const {
-    leads,
-    loading,
-    error,
-    filters,
-    pagination,
-    // debouncedFilters,
-    updateFilters,
-    clearFilters,
-    changePage,
-    // nextPage,
-    // prevPage,
-    // updateLead,
-    // refetch,
-    isEmpty,
-    // hasData,
-  } = useLeadsData();
+export const LeadsTable = ({
+  leads,
+  loading = false,
+  filters,
+  updateFilters,
+  clearFilters,
+  pagination,
+  changePage,
+  isEmpty,
+  onViewLead,
+}: LeadsTableProps) => {
   return (
-    <>
-      <div className="flex flex-2 items-end gap-4 mb-4 mx-4">
-        <div className="flex-2">
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex flex-wrap items-end gap-4 px-6 py-4">
+        <div className="flex-1 min-w-64">
           <SearchInput
-            label="Search"
+            label="Search Leads"
             value={filters.search}
             onChange={(search) => updateFilters({ search })}
             onClear={() => updateFilters({ search: '' })}
+            placeholder="Search by name, email, or company..."
           />
         </div>
-        <div className="flex-1">
+
+        <div className="flex-none w-40">
           <FilterSelect
             options={statusOptions}
             label="Status"
             value={filters.status}
             onChange={(status) =>
-              updateFilters({ status: status as LeadStatus })
+              updateFilters({ status: status as LeadStatus | 'All' })
             }
           />
         </div>
-        <div className="flex-1">
+
+        <div className="flex-none w-40">
           <FilterSelect
             options={dateRangeOptions}
             label="Date Range"
@@ -151,7 +175,8 @@ export const LeadsTable = ({ onViewLead }: LeadsTableProps) => {
             }
           />
         </div>
-        <div className="flex-1">
+
+        <div className="flex-none w-40">
           <FilterSelect
             options={sortByOptions}
             label="Sort By"
@@ -163,10 +188,11 @@ export const LeadsTable = ({ onViewLead }: LeadsTableProps) => {
             }
           />
         </div>
-        <div className="flex-1">
+
+        <div className="flex-none w-36">
           <FilterSelect
             options={sortOrderOptions}
-            label="Sort Order"
+            label="Order"
             value={filters.sortOrder}
             onChange={(sortOrder) =>
               updateFilters({
@@ -175,27 +201,95 @@ export const LeadsTable = ({ onViewLead }: LeadsTableProps) => {
             }
           />
         </div>
-        <div className="flex-1">
-          <Button size="md" onClick={() => clearFilters()}>
+
+        <div className="flex-none">
+          <Button variant="ghost" onClick={clearFilters} className="h-10">
             Clear Filters
           </Button>
         </div>
       </div>
-      <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
-        <Table
-          data={leads}
-          columns={leadColumns}
-          loading={loading}
-          emptyMessage={isEmpty ? 'No leads found' : error?.message}
-          onRowClick={(lead) => onViewLead?.(lead.id)}
-        />
-        <Pagination
-          currentPage={pagination.currentPage}
-          totalPages={pagination.totalPages}
-          totalItems={pagination.total}
-          onPageChange={changePage}
-        />
+
+      {/* Results summary */}
+      <div className="px-6">
+        <p className="text-sm text-neutral-600">
+          {loading ? (
+            'Loading leads...'
+          ) : pagination.total === 0 ? (
+            <>
+              No leads found
+              {(filters.search ||
+                filters.status !== 'All' ||
+                filters.dateRange !== 'All') &&
+                ' with current filters'}
+            </>
+          ) : (
+            <>
+              Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{' '}
+              {Math.min(
+                pagination.currentPage * pagination.limit,
+                pagination.total
+              )}{' '}
+              of {pagination.total} lead{pagination.total !== 1 ? 's' : ''}
+              {(filters.search ||
+                filters.status !== 'All' ||
+                filters.dateRange !== 'All') &&
+                ' (filtered)'}
+            </>
+          )}
+        </p>
       </div>
-    </>
+
+      {isEmpty && !loading ? (
+        <div className="px-6 py-12 text-center">
+          <svg
+            className="mx-auto h-12 w-12 text-neutral-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V9a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+          </svg>
+          <h3 className="mt-2 text-sm font-medium text-neutral-900">
+            No leads found
+          </h3>
+          <p className="mt-1 text-sm text-neutral-500">
+            Try adjusting your filters or create your first lead.
+          </p>
+          <div className="mt-6">
+            <Button variant="primary" onClick={clearFilters}>
+              Clear Filters
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="overflow-hidden">
+            <Table
+              data={leads}
+              columns={leadColumns}
+              loading={loading}
+              emptyMessage="No leads found with the current filters"
+              onRowClick={(lead) => onViewLead?.(lead.id)}
+            />
+          </div>
+
+          {pagination.totalPages > 1 && (
+            <div className="border-t border-neutral-200">
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.total}
+                onPageChange={changePage}
+              />
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 };
