@@ -1,3 +1,4 @@
+import { API_DELAYS } from '../constants/api';
 import type { ApiResponse } from '../interfaces/api/response';
 import type {
   CreateOpportunityRequest,
@@ -6,15 +7,12 @@ import type {
 } from '../interfaces/opportunity';
 import { shouldSimulateError } from '../utils/errorSimulation';
 
-// Simple ID generator
 const generateId = () =>
   'opp_' + Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-// Simulate delay for API calls
-const simulateDelay = (ms: number = 300) =>
+const simulateDelay = (ms: number = API_DELAYS.FAST) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-// In-memory opportunity storage (simulating database)
 let opportunitiesCache: Opportunity[] = [];
 
 export const getOpportunities = async (): Promise<
@@ -23,7 +21,6 @@ export const getOpportunities = async (): Promise<
   await simulateDelay();
 
   try {
-    // Simulate occasional API failure
     if (shouldSimulateError()) {
       throw new Error('Network error');
     }
@@ -49,10 +46,9 @@ export const getOpportunities = async (): Promise<
 export const createOpportunity = async (
   request: CreateOpportunityRequest
 ): Promise<ApiResponse<Opportunity>> => {
-  await simulateDelay(500);
+  await simulateDelay(API_DELAYS.SLOW);
 
   try {
-    // Simulate occasional API failure
     if (shouldSimulateError()) {
       throw new Error('Creation failed');
     }
@@ -92,10 +88,9 @@ export const updateOpportunity = async (
     Pick<Opportunity, 'name' | 'stage' | 'amount' | 'accountName'>
   >
 ): Promise<ApiResponse<Opportunity>> => {
-  await simulateDelay(400);
+  await simulateDelay(API_DELAYS.MEDIUM);
 
   try {
-    // Simulate occasional API failure
     if (shouldSimulateError()) {
       throw new Error('Update failed');
     }
@@ -140,10 +135,9 @@ export const updateOpportunity = async (
 export const deleteOpportunity = async (
   id: string
 ): Promise<ApiResponse<boolean>> => {
-  await simulateDelay(300);
+  await simulateDelay(API_DELAYS.FAST);
 
   try {
-    // Simulate occasional API failure
     if (shouldSimulateError()) {
       throw new Error('Delete failed');
     }
@@ -176,7 +170,6 @@ export const deleteOpportunity = async (
   }
 };
 
-// Helper functions for cache management
 export const clearOpportunitiesCache = () => {
   opportunitiesCache = [];
 };

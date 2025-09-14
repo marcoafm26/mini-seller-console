@@ -10,7 +10,6 @@ import { LeadsPage } from './pages/LeadsPage';
 import { OpportunitiesPage } from './pages/OpportunitiesPage';
 import { getErrorRatePercentage, setErrorRate } from './utils/errorSimulation';
 
-// Navigation Component
 const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [errorRate, setErrorRateState] = useState(getErrorRatePercentage());

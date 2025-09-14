@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getLeads, updateLeadsCache, type GetLeadsParams } from '../api/leads';
+import { DEBOUNCE_DELAYS } from '../constants/ui';
 import type { ApiError } from '../interfaces/api/error';
 import type { Lead, LeadStatus } from '../interfaces/lead';
 import { shouldSimulateError } from '../utils/errorSimulation';
 import { useDebounce } from './useDebounce';
 import { useLocalStorage } from './useLocalStorage';
 
-// User controllable filters (persisted in localStorage)
 interface UserFilters {
   search: string;
   status: LeadStatus | 'All';
@@ -15,7 +15,6 @@ interface UserFilters {
   sortOrder: 'asc' | 'desc';
 }
 
-// Pagination metadata (from server responses)
 interface PaginationState {
   currentPage: number;
   totalPages: number;
@@ -25,7 +24,6 @@ interface PaginationState {
   hasPrev: boolean;
 }
 
-// Default user filters
 const DEFAULT_USER_FILTERS: UserFilters = {
   search: '',
   status: 'All',
@@ -34,7 +32,6 @@ const DEFAULT_USER_FILTERS: UserFilters = {
   sortOrder: 'desc',
 };
 
-// Default pagination state
 const DEFAULT_PAGINATION: PaginationState = {
   currentPage: 1,
   totalPages: 1,
@@ -59,7 +56,10 @@ export const useLeadsData = () => {
 
   const isFilterChangeRef = useRef(false);
 
-  const debouncedUserFilters = useDebounce(userFilters, 300);
+  const debouncedUserFilters = useDebounce(
+    userFilters,
+    DEBOUNCE_DELAYS.DEFAULT
+  );
 
   useEffect(() => {
     const fetchWithFilters = async () => {
@@ -95,16 +95,12 @@ export const useLeadsData = () => {
           });
         } else {
           setError(result?.error || { message: 'Failed to fetch leads' });
-          // setLeads([]);
-          // setPagination(DEFAULT_PAGINATION);
         }
       } catch {
         setError({
           message: 'Network error occurred',
           code: 'NETWORK_ERROR',
         });
-        // setLeads([]);
-        // setPagination(DEFAULT_PAGINATION);
       } finally {
         setLoading(false);
         isFilterChangeRef.current = false;
@@ -241,7 +237,6 @@ export const useLeadsData = () => {
         page <= pagination.totalPages &&
         page !== pagination.currentPage
       ) {
-        console.log('changePage', page);
         // Don't set page state immediately - let fetchLeads handle it after successful fetch
         await fetchLeads(page);
       }
@@ -271,7 +266,6 @@ export const useLeadsData = () => {
       const originalLeads = [...leads];
 
       try {
-        // Apply optimistic update to UI
         const optimisticLeads = leads.map((lead) =>
           lead.id === leadId
             ? { ...lead, ...updates, updatedAt: new Date().toISOString() }
@@ -280,17 +274,14 @@ export const useLeadsData = () => {
         setLeads(optimisticLeads);
         setError(null);
 
-        // Simulate the API call (with potential error)
         if (shouldSimulateError()) {
           throw new Error('Update failed');
         }
 
         // Only update cache if the operation succeeded
         updateLeadsCache(optimisticLeads.filter((lead) => lead.id === leadId));
-        console.log(`Lead ${leadId} updated successfully`);
         return true;
       } catch (error) {
-        // Rollback optimistic update on error
         setLeads(originalLeads);
         setError({
           message: 'Failed to update lead. Please try again.',
@@ -308,28 +299,19 @@ export const useLeadsData = () => {
   }, [fetchLeads, pagination.currentPage]);
 
   return {
-    // Current page data
     leads,
     loading,
     error,
-
-    // User filters (persisted in localStorage)
     filters: userFilters,
     debouncedFilters: debouncedUserFilters,
     updateFilters,
     clearFilters,
-
-    // Pagination state (separate from user filters)
     pagination,
     changePage,
     nextPage,
     prevPage,
-
-    // Actions
     updateLead,
     refetch,
-
-    // Utilities
     isEmpty: !loading && leads.length === 0,
     hasData: leads.length > 0,
   };

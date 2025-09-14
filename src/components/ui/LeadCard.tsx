@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Lead } from '../../interfaces/lead';
 import { formatDate, getScoreColor } from '../utils/formatting';
 import { Badge } from './Badge';

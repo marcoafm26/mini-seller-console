@@ -19,7 +19,6 @@ export const LeadsPage = () => {
     isEmpty,
   } = useLeadsData();
 
-  // Panel state
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
@@ -74,7 +73,6 @@ export const LeadsPage = () => {
           );
         }
 
-        console.log('Lead converted to opportunity:', result.data);
         return true;
       } else {
         console.error('Failed to convert lead:', result.error);

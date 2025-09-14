@@ -10,7 +10,6 @@ export const OpportunitiesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
 
-  // Panel state
   const [selectedOpportunity, setSelectedOpportunity] =
     useState<Opportunity | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -66,7 +65,6 @@ export const OpportunitiesPage = () => {
     const originalSelectedOpportunity = selectedOpportunity;
 
     try {
-      // Apply optimistic update immediately
       const optimisticUpdates = {
         ...updates,
         updatedAt: new Date().toISOString(),
@@ -78,18 +76,15 @@ export const OpportunitiesPage = () => {
         )
       );
 
-      // Update selected opportunity if it's the updated one
       if (selectedOpportunity && selectedOpportunity.id === opportunityId) {
         setSelectedOpportunity((prev) =>
           prev ? { ...prev, ...optimisticUpdates } : null
         );
       }
 
-      // Make API call
       const result = await updateOpportunity(opportunityId, updates);
 
       if (result.success) {
-        console.log(`Opportunity ${opportunityId} updated successfully`);
         return true;
       } else {
         // Rollback on API error - original data is still valid
@@ -111,7 +106,6 @@ export const OpportunitiesPage = () => {
     fetchOpportunities();
   };
 
-  // Calculate stats
   const statsData = {
     total: opportunities.length,
     prospecting: opportunities.filter((o) => o.stage === 'Prospecting').length,

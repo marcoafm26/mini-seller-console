@@ -63,4 +63,8 @@ function generateLeads(count) {
 
 // Generate 200 leads
 const leads = generateLeads(200);
-console.log(JSON.stringify(leads, null, 2));
+
+// Only output to console if run directly (not imported)
+if (require.main === module) {
+    console.log(JSON.stringify(leads, null, 2));
+}
