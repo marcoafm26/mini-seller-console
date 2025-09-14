@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createOpportunity } from '../api/opportunities';
 import { LeadDetailPanel } from '../components/leads/LeadDetailPanel';
 import { LeadsTable } from '../components/leads/LeadsTable';
 import { useLeadsData } from '../hooks/useLeadsData';
@@ -10,13 +11,10 @@ export const LeadsPage = () => {
     loading,
     error,
     filters,
-    debouncedFilters,
     updateFilters,
     clearFilters,
     pagination,
     changePage,
-    nextPage,
-    prevPage,
     updateLead,
     isEmpty,
   } = useLeadsData();
@@ -52,6 +50,42 @@ export const LeadsPage = () => {
     return success;
   };
 
+  const handleConvertLead = async (leadId: string): Promise<boolean> => {
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead) return false;
+
+    try {
+      // Create opportunity from lead
+      const result = await createOpportunity({
+        name: `${lead.company} - ${lead.name}`,
+        accountName: lead.company,
+        leadId: lead.id,
+        stage: 'Prospecting', // Default stage
+      });
+
+      if (result.success) {
+        // Update the lead status to 'Converted'
+        await updateLead(leadId, { status: 'Converted' });
+
+        // Update selected lead if it's the converted lead
+        if (selectedLead && selectedLead.id === leadId) {
+          setSelectedLead((prev) =>
+            prev ? { ...prev, status: 'Converted' } : null
+          );
+        }
+
+        console.log('Lead converted to opportunity:', result.data);
+        return true;
+      } else {
+        console.error('Failed to convert lead:', result.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to convert lead:', error);
+      return false;
+    }
+  };
+
   // Calculate stats from all leads (not just current page)
   const statsData = {
     total: pagination.total,
@@ -72,13 +106,11 @@ export const LeadsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 p-6">
+    <div className="p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-neutral-900 mb-2">
-            Mini Seller Console
-          </h1>
+          <h1 className="text-3xl font-bold text-neutral-900 mb-2">Leads</h1>
           <p className="text-neutral-600">
             Manage your leads and convert them to opportunities
           </p>
@@ -149,13 +181,10 @@ export const LeadsPage = () => {
             loading={loading}
             error={error}
             filters={filters}
-            debouncedFilters={debouncedFilters}
             updateFilters={updateFilters}
             clearFilters={clearFilters}
             pagination={pagination}
             changePage={changePage}
-            nextPage={nextPage}
-            prevPage={prevPage}
             isEmpty={isEmpty}
             onViewLead={handleViewLead}
           />
@@ -168,6 +197,7 @@ export const LeadsPage = () => {
         isOpen={isPanelOpen}
         onClose={handleClosePanel}
         onUpdateLead={handleUpdateLead}
+        onConvertLead={handleConvertLead}
         loading={loading}
       />
     </div>

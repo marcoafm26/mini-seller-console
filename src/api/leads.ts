@@ -29,7 +29,7 @@ const simulateDelay = (ms: number = 800) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 // Simulate random failures (5% chance for testing)
-const simulateFailure = () => Math.random() < 0.05;
+const simulateFailure = () => Math.random() < 0.2;
 
 // In-memory cache for demo (includes any updates from optimistic updates)
 let leadsCache: Lead[] = [...(leadsData as Lead[])];

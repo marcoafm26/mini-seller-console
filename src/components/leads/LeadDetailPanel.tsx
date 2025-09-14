@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import type { ApiError } from '../../interfaces/api/error';
 import type { Lead, LeadStatus } from '../../interfaces/lead';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -12,6 +13,7 @@ interface LeadDetailPanelProps {
     leadId: string,
     updates: Partial<Pick<Lead, 'status' | 'email'>>
   ) => Promise<boolean>;
+  onConvertLead?: (leadId: string) => Promise<boolean>;
   loading?: boolean;
 }
 
@@ -28,6 +30,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
   isOpen,
   onClose,
   onUpdateLead,
+  onConvertLead,
   loading = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -35,6 +38,8 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
   const [editedStatus, setEditedStatus] = useState<LeadStatus>('New');
   const [emailError, setEmailError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
 
   // Reset form when lead changes or panel opens
   useEffect(() => {
@@ -42,6 +47,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
       setEditedEmail(lead.email);
       setEditedStatus(lead.status);
       setEmailError('');
+      setError(null);
       setIsEditing(false);
     }
   }, [lead, isOpen]);
@@ -67,6 +73,10 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
     if (emailError) {
       validateEmail(value);
     }
+    // Clear error when user starts making changes
+    if (error) {
+      setError(null);
+    }
   };
 
   const handleSave = async () => {
@@ -84,6 +94,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
     }
 
     setIsSaving(true);
+    setError(null);
 
     try {
       const updates: Partial<Pick<Lead, 'status' | 'email'>> = {};
@@ -100,9 +111,19 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
 
       if (success) {
         setIsEditing(false);
+        setError(null);
+      } else {
+        setError({
+          message: 'Failed to update lead. Please try again.',
+          code: 'UPDATE_FAILED',
+        });
       }
-    } catch (error) {
-      console.error('Failed to update lead:', error);
+    } catch (updateError) {
+      console.error('Failed to update lead:', updateError);
+      setError({
+        message: 'An unexpected error occurred. Please try again.',
+        code: 'UNEXPECTED_ERROR',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -114,11 +135,52 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
       setEditedStatus(lead.status);
       setEmailError('');
     }
+    setError(null);
     setIsEditing(false);
   };
 
   const handleStartEditing = () => {
     setIsEditing(true);
+    // Clear error when starting to edit
+    setError(null);
+  };
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setEditedStatus(e.target.value as LeadStatus);
+    // Clear error when user makes changes
+    if (error) {
+      setError(null);
+    }
+  };
+
+  const handleConvertLead = async () => {
+    if (!lead || !onConvertLead) return;
+
+    setIsConverting(true);
+    setError(null);
+
+    try {
+      const success = await onConvertLead(lead.id);
+
+      if (success) {
+        // Close panel after successful conversion
+        onClose();
+      } else {
+        setError({
+          message: 'Failed to convert lead to opportunity. Please try again.',
+          code: 'CONVERT_FAILED',
+        });
+      }
+    } catch (convertError) {
+      console.error('Failed to convert lead:', convertError);
+      setError({
+        message:
+          'An unexpected error occurred during conversion. Please try again.',
+        code: 'CONVERT_UNEXPECTED_ERROR',
+      });
+    } finally {
+      setIsConverting(false);
+    }
   };
 
   if (!lead) return null;
@@ -179,6 +241,35 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
             {/* Content */}
             <div className="flex-1 px-4 py-6 sm:px-6">
               <div className="space-y-6">
+                {/* Error Display */}
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-5 w-5 text-red-400"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800">
+                          Error
+                        </h3>
+                        <div className="mt-2 text-sm text-red-700">
+                          <p>{error.message}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Lead Info */}
                 <div>
                   <h3 className="text-lg font-medium text-neutral-900 mb-4">
@@ -223,9 +314,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
                       {isEditing ? (
                         <select
                           value={editedStatus}
-                          onChange={(e) =>
-                            setEditedStatus(e.target.value as LeadStatus)
-                          }
+                          onChange={handleStatusChange}
                           className="block w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         >
                           {statusOptions.map((status) => (
@@ -313,17 +402,33 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex space-x-3">
-                    <Button variant="ghost" onClick={onClose}>
-                      Close
-                    </Button>
-                    <Button
-                      variant="primary"
-                      onClick={handleStartEditing}
-                      disabled={loading}
-                    >
-                      Edit Lead
-                    </Button>
+                  <div className="flex justify-between w-full">
+                    <div className="flex space-x-3">
+                      <Button variant="ghost" onClick={onClose}>
+                        Close
+                      </Button>
+                      <Button
+                        variant="primary"
+                        onClick={handleStartEditing}
+                        disabled={loading}
+                      >
+                        Edit Lead
+                      </Button>
+                    </div>
+
+                    {/* Convert Lead Button */}
+                    {lead.status !== 'Converted' && onConvertLead && (
+                      <div>
+                        <Button
+                          variant="success"
+                          onClick={handleConvertLead}
+                          loading={isConverting}
+                          disabled={loading || isSaving}
+                        >
+                          Convert to Opportunity
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

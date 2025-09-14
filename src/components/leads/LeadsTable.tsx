@@ -138,38 +138,6 @@ export const LeadsTable = ({
   isEmpty,
   onViewLead,
 }: LeadsTableProps) => {
-  // Show empty state if no leads and not loading
-  if (isEmpty && !loading) {
-    return (
-      <div className="px-6 py-12 text-center">
-        <svg
-          className="mx-auto h-12 w-12 text-neutral-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V9a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-          />
-        </svg>
-        <h3 className="mt-2 text-sm font-medium text-neutral-900">
-          No leads found
-        </h3>
-        <p className="mt-1 text-sm text-neutral-500">
-          Try adjusting your filters or create your first lead.
-        </p>
-        <div className="mt-6">
-          <Button variant="primary" onClick={clearFilters}>
-            Clear Filters
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -241,27 +209,86 @@ export const LeadsTable = ({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-hidden">
-        <Table
-          data={leads}
-          columns={leadColumns}
-          loading={loading}
-          emptyMessage="No leads found with the current filters"
-          onRowClick={(lead) => onViewLead?.(lead.id)}
-        />
+      {/* Results summary */}
+      <div className="px-6">
+        <p className="text-sm text-neutral-600">
+          {loading ? (
+            'Loading leads...'
+          ) : pagination.total === 0 ? (
+            <>
+              No leads found
+              {(filters.search ||
+                filters.status !== 'All' ||
+                filters.dateRange !== 'All') &&
+                ' with current filters'}
+            </>
+          ) : (
+            <>
+              Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{' '}
+              {Math.min(
+                pagination.currentPage * pagination.limit,
+                pagination.total
+              )}{' '}
+              of {pagination.total} lead{pagination.total !== 1 ? 's' : ''}
+              {(filters.search ||
+                filters.status !== 'All' ||
+                filters.dateRange !== 'All') &&
+                ' (filtered)'}
+            </>
+          )}
+        </p>
       </div>
 
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="border-t border-neutral-200">
-          <Pagination
-            currentPage={pagination.currentPage}
-            totalPages={pagination.totalPages}
-            totalItems={pagination.total}
-            onPageChange={changePage}
-          />
+      {isEmpty && !loading ? (
+        <div className="px-6 py-12 text-center">
+          <svg
+            className="mx-auto h-12 w-12 text-neutral-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V9a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+          </svg>
+          <h3 className="mt-2 text-sm font-medium text-neutral-900">
+            No leads found
+          </h3>
+          <p className="mt-1 text-sm text-neutral-500">
+            Try adjusting your filters or create your first lead.
+          </p>
+          <div className="mt-6">
+            <Button variant="primary" onClick={clearFilters}>
+              Clear Filters
+            </Button>
+          </div>
         </div>
+      ) : (
+        <>
+          <div className="overflow-hidden">
+            <Table
+              data={leads}
+              columns={leadColumns}
+              loading={loading}
+              emptyMessage="No leads found with the current filters"
+              onRowClick={(lead) => onViewLead?.(lead.id)}
+            />
+          </div>
+
+          {pagination.totalPages > 1 && (
+            <div className="border-t border-neutral-200">
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.total}
+                onPageChange={changePage}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
