@@ -1,6 +1,7 @@
 import leadsData from '../data/leads.json';
 import type { ApiResponse } from '../interfaces/api/response';
 import type { Lead, LeadFilters, LeadStatus } from '../interfaces/lead';
+import { shouldSimulateError } from '../utils/errorSimulation';
 
 // Query parameters interface
 export interface GetLeadsParams {
@@ -28,8 +29,8 @@ export interface GetLeadsResponse {
 const simulateDelay = (ms: number = 800) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-// Simulate random failures (5% chance for testing)
-const simulateFailure = () => Math.random() < 0.2;
+// Simulate random failures using configurable error rate
+const simulateFailure = shouldSimulateError;
 
 // In-memory cache for demo (includes any updates from optimistic updates)
 let leadsCache: Lead[] = [...(leadsData as Lead[])];

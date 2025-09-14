@@ -4,6 +4,7 @@ import type {
   Opportunity,
   OpportunityStage,
 } from '../interfaces/opportunity';
+import { shouldSimulateError } from '../utils/errorSimulation';
 
 // Simple ID generator
 const generateId = () =>
@@ -22,8 +23,8 @@ export const getOpportunities = async (): Promise<
   await simulateDelay();
 
   try {
-    // Simulate occasional API failure (5% chance)
-    if (Math.random() < 0.05) {
+    // Simulate occasional API failure
+    if (shouldSimulateError()) {
       throw new Error('Network error');
     }
 
@@ -51,8 +52,8 @@ export const createOpportunity = async (
   await simulateDelay(500);
 
   try {
-    // Simulate occasional API failure (10% chance)
-    if (Math.random() < 0.1) {
+    // Simulate occasional API failure
+    if (shouldSimulateError()) {
       throw new Error('Creation failed');
     }
 
@@ -94,8 +95,8 @@ export const updateOpportunity = async (
   await simulateDelay(400);
 
   try {
-    // Simulate occasional API failure (10% chance)
-    if (Math.random() < 0.1) {
+    // Simulate occasional API failure
+    if (shouldSimulateError()) {
       throw new Error('Update failed');
     }
 
@@ -142,8 +143,8 @@ export const deleteOpportunity = async (
   await simulateDelay(300);
 
   try {
-    // Simulate occasional API failure (5% chance)
-    if (Math.random() < 0.05) {
+    // Simulate occasional API failure
+    if (shouldSimulateError()) {
       throw new Error('Delete failed');
     }
 

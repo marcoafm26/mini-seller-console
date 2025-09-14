@@ -8,10 +8,18 @@ import {
 } from 'react-router-dom';
 import { LeadsPage } from './pages/LeadsPage';
 import { OpportunitiesPage } from './pages/OpportunitiesPage';
+import { getErrorRatePercentage, setErrorRate } from './utils/errorSimulation';
 
 // Navigation Component
 const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [errorRate, setErrorRateState] = useState(getErrorRatePercentage());
+
+  const handleErrorRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    setErrorRateState(value);
+    setErrorRate(value / 100);
+  };
 
   return (
     <nav className="bg-white shadow-sm border-b border-neutral-200">
@@ -48,6 +56,27 @@ const Navigation = () => {
               >
                 Opportunities
               </NavLink>
+            </div>
+          </div>
+
+          {/* Desktop Error Rate Control */}
+          <div className="hidden sm:flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <label htmlFor="error-rate" className="text-xs text-neutral-600">
+                Error Rate:
+              </label>
+              <input
+                id="error-rate"
+                type="range"
+                min="0"
+                max="50"
+                value={errorRate}
+                onChange={handleErrorRateChange}
+                className="w-16 h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <span className="text-xs text-neutral-600 min-w-[32px]">
+                {errorRate}%
+              </span>
             </div>
           </div>
 
@@ -123,6 +152,23 @@ const Navigation = () => {
             >
               Opportunities
             </NavLink>
+
+            {/* Mobile Error Rate Control */}
+            <div className="px-3 py-2 border-l-4 border-transparent">
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-neutral-600">
+                  API Error Rate: {errorRate}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="50"
+                  value={errorRate}
+                  onChange={handleErrorRateChange}
+                  className="w-20 h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer ml-3"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getLeads, updateLeadsCache, type GetLeadsParams } from '../api/leads';
 import type { ApiError } from '../interfaces/api/error';
 import type { Lead, LeadStatus } from '../interfaces/lead';
+import { shouldSimulateError } from '../utils/errorSimulation';
 import { useDebounce } from './useDebounce';
 import { useLocalStorage } from './useLocalStorage';
 
@@ -94,16 +95,16 @@ export const useLeadsData = () => {
           });
         } else {
           setError(result?.error || { message: 'Failed to fetch leads' });
-          setLeads([]);
-          setPagination(DEFAULT_PAGINATION);
+          // setLeads([]);
+          // setPagination(DEFAULT_PAGINATION);
         }
       } catch {
         setError({
           message: 'Network error occurred',
           code: 'NETWORK_ERROR',
         });
-        setLeads([]);
-        setPagination(DEFAULT_PAGINATION);
+        // setLeads([]);
+        // setPagination(DEFAULT_PAGINATION);
       } finally {
         setLoading(false);
         isFilterChangeRef.current = false;
@@ -136,7 +137,7 @@ export const useLeadsData = () => {
           dateRange: debouncedUserFilters.dateRange,
           sortBy: debouncedUserFilters.sortBy,
           sortOrder: debouncedUserFilters.sortOrder,
-          page: pagination.currentPage,
+          page: 1, // Always reset to page 1 when filters change
           limit: pagination.limit,
         };
 
@@ -144,13 +145,14 @@ export const useLeadsData = () => {
 
         if (result?.success && result.data) {
           setLeads(result.data.leads);
-          setPagination((prev) => ({
-            ...prev,
+          setPagination({
+            currentPage: 1, // Reset to page 1 when filters change
             totalPages: result.data.pagination.totalPages,
             total: result.data.pagination.total,
+            limit: result.data.pagination.limit || pagination.limit,
             hasNext: result.data.pagination.hasNext,
             hasPrev: result.data.pagination.hasPrev,
-          }));
+          });
         } else {
           setError(result?.error || { message: 'Failed to fetch leads' });
         }
@@ -166,7 +168,6 @@ export const useLeadsData = () => {
 
     fetchWithPagination();
   }, [
-    pagination.currentPage,
     debouncedUserFilters.search,
     debouncedUserFilters.status,
     debouncedUserFilters.dateRange,
@@ -205,16 +206,16 @@ export const useLeadsData = () => {
           });
         } else {
           setError(result?.error || { message: 'Failed to fetch leads' });
-          setLeads([]);
-          setPagination(DEFAULT_PAGINATION);
+          // setLeads([]);
+          // setPagination(DEFAULT_PAGINATION);
         }
       } catch {
         setError({
           message: 'Network error occurred',
           code: 'NETWORK_ERROR',
         });
-        setLeads([]);
-        setPagination(DEFAULT_PAGINATION);
+        // setLeads([]);
+        // setPagination(DEFAULT_PAGINATION);
       } finally {
         setLoading(false);
       }
@@ -234,28 +235,29 @@ export const useLeadsData = () => {
   }, [setUserFilters]);
 
   const changePage = useCallback(
-    (page: number) => {
+    async (page: number) => {
       if (
         page >= 1 &&
         page <= pagination.totalPages &&
         page !== pagination.currentPage
       ) {
         console.log('changePage', page);
-        setPagination((prev) => ({ ...prev, currentPage: page }));
+        // Don't set page state immediately - let fetchLeads handle it after successful fetch
+        await fetchLeads(page);
       }
     },
-    [pagination.totalPages, pagination.currentPage]
+    [pagination.totalPages, pagination.currentPage, fetchLeads]
   );
 
-  const nextPage = useCallback(() => {
+  const nextPage = useCallback(async () => {
     if (pagination.hasNext) {
-      changePage(pagination.currentPage + 1);
+      await changePage(pagination.currentPage + 1);
     }
   }, [pagination.hasNext, pagination.currentPage, changePage]);
 
-  const prevPage = useCallback(() => {
+  const prevPage = useCallback(async () => {
     if (pagination.hasPrev) {
-      changePage(pagination.currentPage - 1);
+      await changePage(pagination.currentPage - 1);
     }
   }, [pagination.hasPrev, pagination.currentPage, changePage]);
 
@@ -269,6 +271,7 @@ export const useLeadsData = () => {
       const originalLeads = [...leads];
 
       try {
+        // Apply optimistic update to UI
         const optimisticLeads = leads.map((lead) =>
           lead.id === leadId
             ? { ...lead, ...updates, updatedAt: new Date().toISOString() }
@@ -276,15 +279,18 @@ export const useLeadsData = () => {
         );
         setLeads(optimisticLeads);
         setError(null);
-        updateLeadsCache(optimisticLeads.filter((lead) => lead.id === leadId));
 
-        if (Math.random() < 0.2) {
+        // Simulate the API call (with potential error)
+        if (shouldSimulateError()) {
           throw new Error('Update failed');
         }
 
+        // Only update cache if the operation succeeded
+        updateLeadsCache(optimisticLeads.filter((lead) => lead.id === leadId));
         console.log(`Lead ${leadId} updated successfully`);
         return true;
       } catch (error) {
+        // Rollback optimistic update on error
         setLeads(originalLeads);
         setError({
           message: 'Failed to update lead. Please try again.',
@@ -297,8 +303,8 @@ export const useLeadsData = () => {
     [leads]
   );
 
-  const refetch = useCallback(() => {
-    fetchLeads(pagination.currentPage);
+  const refetch = useCallback(async () => {
+    await fetchLeads(pagination.currentPage);
   }, [fetchLeads, pagination.currentPage]);
 
   return {

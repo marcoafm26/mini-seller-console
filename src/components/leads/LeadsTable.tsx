@@ -66,7 +66,7 @@ interface LeadsTableProps {
   updateFilters: (filters: Partial<UserFilters>) => void;
   clearFilters: () => void;
   pagination: PaginationState;
-  changePage: (page: number) => void;
+  changePage: (page: number) => Promise<void>;
   isEmpty: boolean;
   onViewLead?: (leadId: string) => void;
 }

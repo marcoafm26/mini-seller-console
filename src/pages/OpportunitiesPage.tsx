@@ -62,34 +62,46 @@ export const OpportunitiesPage = () => {
       Pick<Opportunity, 'name' | 'stage' | 'amount' | 'accountName'>
     >
   ) => {
+    const originalOpportunities = [...opportunities];
+    const originalSelectedOpportunity = selectedOpportunity;
+
     try {
+      // Apply optimistic update immediately
+      const optimisticUpdates = {
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setOpportunities((prev) =>
+        prev.map((opp) =>
+          opp.id === opportunityId ? { ...opp, ...optimisticUpdates } : opp
+        )
+      );
+
+      // Update selected opportunity if it's the updated one
+      if (selectedOpportunity && selectedOpportunity.id === opportunityId) {
+        setSelectedOpportunity((prev) =>
+          prev ? { ...prev, ...optimisticUpdates } : null
+        );
+      }
+
+      // Make API call
       const result = await updateOpportunity(opportunityId, updates);
 
       if (result.success) {
-        // Update opportunities list with optimistic update
-        setOpportunities((prev) =>
-          prev.map((opp) =>
-            opp.id === opportunityId
-              ? { ...opp, ...updates, updatedAt: new Date().toISOString() }
-              : opp
-          )
-        );
-
-        // Update selected opportunity if it's the updated one
-        if (selectedOpportunity && selectedOpportunity.id === opportunityId) {
-          setSelectedOpportunity((prev) =>
-            prev
-              ? { ...prev, ...updates, updatedAt: new Date().toISOString() }
-              : null
-          );
-        }
-
+        console.log(`Opportunity ${opportunityId} updated successfully`);
         return true;
       } else {
+        // Rollback on API error - original data is still valid
+        setOpportunities(originalOpportunities);
+        setSelectedOpportunity(originalSelectedOpportunity);
         console.error('Failed to update opportunity:', result.error);
         return false;
       }
     } catch (error) {
+      // Rollback on network error - original data is still valid
+      setOpportunities(originalOpportunities);
+      setSelectedOpportunity(originalSelectedOpportunity);
       console.error('Failed to update opportunity:', error);
       return false;
     }

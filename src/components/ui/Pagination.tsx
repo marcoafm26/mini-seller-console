@@ -2,7 +2,7 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   totalItems: number;
-  onPageChange: (page: number) => void;
+  onPageChange: (page: number) => void | Promise<void>;
 }
 
 export const Pagination = ({
