@@ -1,5 +1,5 @@
 export const DEBOUNCE_DELAYS = {
-  DEFAULT: 300,
+  DEFAULT: 400,
   FAST: 150,
   SLOW: 500,
 } as const;

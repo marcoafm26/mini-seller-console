@@ -228,7 +228,12 @@ export const useLeadsData = () => {
 
   const clearFilters = useCallback(() => {
     setUserFilters(DEFAULT_USER_FILTERS);
-  }, [setUserFilters]);
+    setError(null);
+
+    if (error || leads.length === 0) {
+      fetchLeads(1);
+    }
+  }, [setUserFilters, error, leads.length, fetchLeads]);
 
   const changePage = useCallback(
     async (page: number) => {
