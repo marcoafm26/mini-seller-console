@@ -197,20 +197,20 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
 
       {/* Slide-over panel */}
       <div
-        className={`fixed inset-y-0 right-0 pl-10 max-w-full flex z-50 transition-transform duration-300 ease-in-out transform ${
+        className={`fixed inset-y-0 right-0 pl-4 sm:pl-10 max-w-full flex z-50 transition-transform duration-300 ease-in-out transform ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="w-screen max-w-md">
+        <div className="w-screen max-w-sm sm:max-w-md">
           <div className="h-full flex flex-col bg-white shadow-xl overflow-y-scroll">
             {/* Header */}
-            <div className="px-4 py-6 bg-neutral-50 sm:px-6">
+            <div className="px-4 py-4 sm:py-6 bg-neutral-50 sm:px-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-lg font-medium text-neutral-900">
+                  <h2 className="text-base sm:text-lg font-medium text-neutral-900">
                     Lead Details
                   </h2>
-                  <p className="mt-1 text-sm text-neutral-500">
+                  <p className="mt-1 text-xs sm:text-sm text-neutral-500">
                     View and edit lead information
                   </p>
                 </div>
@@ -239,7 +239,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
             </div>
 
             {/* Content */}
-            <div className="flex-1 px-4 py-6 sm:px-6">
+            <div className="flex-1 px-4 py-4 sm:py-6 sm:px-6">
               <div className="space-y-6">
                 {/* Error Display */}
                 {error && (
@@ -381,7 +381,7 @@ export const LeadDetailPanel: React.FC<LeadDetailPanelProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-4 bg-neutral-50 sm:px-6">
+            <div className="px-4 py-3 sm:py-4 bg-neutral-50 sm:px-6">
               <div className="flex justify-between">
                 {isEditing ? (
                   <div className="flex space-x-3">
