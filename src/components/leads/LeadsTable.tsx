@@ -1,6 +1,8 @@
 import { useLeadFilters } from '../../hooks/useLeadFilters.ts';
-import type { Lead } from '../../interfaces/lead';
+import type { Lead, LeadStatus } from '../../interfaces/lead';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button.tsx';
+import { FilterSelect } from '../ui/FilterSelect.tsx';
 import { SearchInput } from '../ui/SearchInput.tsx';
 import type { TableColumn } from '../ui/Table.tsx';
 import { Table } from '../ui/Table.tsx';
@@ -69,23 +71,105 @@ const leadColumns: TableColumn<Lead>[] = [
   },
 ];
 
+const statusOptions = [
+  { value: 'All', label: 'All' },
+  { value: 'New', label: 'New' },
+  { value: 'Contacted', label: 'Contacted' },
+  { value: 'Qualified', label: 'Qualified' },
+  { value: 'Lost', label: 'Lost' },
+];
+
+const dateRangeOptions = [
+  { value: '1d', label: 'Last 24 hours' },
+  { value: '7d', label: 'Last 7 days' },
+  { value: '30d', label: 'Last 30 days' },
+  { value: '1y', label: 'Last 1 year' },
+  { value: 'All', label: 'All' },
+];
+
+const sortByOptions = [
+  { value: 'score', label: 'Score' },
+  { value: 'name', label: 'Name' },
+  { value: 'createdAt', label: 'Created' },
+  { value: 'updatedAt', label: 'Updated' },
+];
+
+const sortOrderOptions = [
+  { value: 'asc', label: 'Ascending' },
+  { value: 'desc', label: 'Descending' },
+];
+
 export const LeadsTable = ({
   leads,
   loading = false,
   onViewLead,
 }: LeadsTableProps) => {
-  console.log('leads table');
   const { filters, filteredLeads, clearFilters, setFilters } =
     useLeadFilters(leads);
 
   return (
     <>
-      <div className="mb-4 mx-4">
-        <SearchInput
-          value={filters.search}
-          onChange={(search) => setFilters({ ...filters, search })}
-          onClear={() => clearFilters()}
-        />
+      <div className="flex flex-2 items-end gap-4 mb-4 mx-4">
+        <div className="flex-2">
+          <SearchInput
+            label="Search"
+            value={filters.search}
+            onChange={(search) => setFilters({ ...filters, search })}
+            onClear={() => setFilters({ ...filters, search: '' })}
+          />
+        </div>
+        <div className="flex-1">
+          <FilterSelect
+            options={statusOptions}
+            label="Status"
+            value={filters.status}
+            onChange={(status) =>
+              setFilters({ ...filters, status: status as LeadStatus })
+            }
+          />
+        </div>
+        <div className="flex-1">
+          <FilterSelect
+            options={dateRangeOptions}
+            label="Date Range"
+            value={filters.dateRange}
+            onChange={(dateRange) =>
+              setFilters({
+                ...filters,
+                dateRange: dateRange as '1d' | '7d' | '30d' | '1y' | 'All',
+              })
+            }
+          />
+        </div>
+        <div className="flex-1">
+          <FilterSelect
+            options={sortByOptions}
+            label="Sort By"
+            value={filters.sortBy}
+            onChange={(sortBy) =>
+              setFilters({
+                ...filters,
+                sortBy: sortBy as 'score' | 'name' | 'createdAt' | 'updatedAt',
+              })
+            }
+          />
+        </div>
+        <div className="flex-1">
+          <FilterSelect
+            options={sortOrderOptions}
+            label="Sort Order"
+            value={filters.sortOrder}
+            onChange={(sortOrder) =>
+              setFilters({
+                ...filters,
+                sortOrder: sortOrder as 'asc' | 'desc',
+              })
+            }
+          />
+        </div>
+        <div className="flex-1">
+          <Button onClick={() => clearFilters()}>Clear Filters</Button>
+        </div>
       </div>
       <Table
         data={filteredLeads}

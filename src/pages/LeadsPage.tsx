@@ -76,7 +76,7 @@ export const LeadsPage = () => {
         </div>
 
         {/* Simple Leads List */}
-        <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-soft">
           <div className="px-6 py-4">
             <h2 className="text-xl font-semibold text-neutral-900">Leads</h2>
           </div>
