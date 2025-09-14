@@ -1,8 +1,9 @@
-import { useLeadFilters } from '../../hooks/useLeadFilters.ts';
+import { useLeadsData } from '../../hooks/useLeadsData.ts';
 import type { Lead, LeadStatus } from '../../interfaces/lead';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button.tsx';
 import { FilterSelect } from '../ui/FilterSelect.tsx';
+import { Pagination } from '../ui/Pagination.tsx';
 import { SearchInput } from '../ui/SearchInput.tsx';
 import type { TableColumn } from '../ui/Table.tsx';
 import { Table } from '../ui/Table.tsx';
@@ -99,14 +100,24 @@ const sortOrderOptions = [
   { value: 'desc', label: 'Descending' },
 ];
 
-export const LeadsTable = ({
-  leads,
-  loading = false,
-  onViewLead,
-}: LeadsTableProps) => {
-  const { filters, filteredLeads, clearFilters, setFilters } =
-    useLeadFilters(leads);
-
+export const LeadsTable = ({ onViewLead }: LeadsTableProps) => {
+  const {
+    leads,
+    loading,
+    error,
+    filters,
+    pagination,
+    // debouncedFilters,
+    updateFilters,
+    clearFilters,
+    changePage,
+    // nextPage,
+    // prevPage,
+    // updateLead,
+    // refetch,
+    isEmpty,
+    // hasData,
+  } = useLeadsData();
   return (
     <>
       <div className="flex flex-2 items-end gap-4 mb-4 mx-4">
@@ -114,8 +125,8 @@ export const LeadsTable = ({
           <SearchInput
             label="Search"
             value={filters.search}
-            onChange={(search) => setFilters({ ...filters, search })}
-            onClear={() => setFilters({ ...filters, search: '' })}
+            onChange={(search) => updateFilters({ search })}
+            onClear={() => updateFilters({ search: '' })}
           />
         </div>
         <div className="flex-1">
@@ -124,7 +135,7 @@ export const LeadsTable = ({
             label="Status"
             value={filters.status}
             onChange={(status) =>
-              setFilters({ ...filters, status: status as LeadStatus })
+              updateFilters({ status: status as LeadStatus })
             }
           />
         </div>
@@ -134,8 +145,7 @@ export const LeadsTable = ({
             label="Date Range"
             value={filters.dateRange}
             onChange={(dateRange) =>
-              setFilters({
-                ...filters,
+              updateFilters({
                 dateRange: dateRange as '1d' | '7d' | '30d' | '1y' | 'All',
               })
             }
@@ -147,8 +157,7 @@ export const LeadsTable = ({
             label="Sort By"
             value={filters.sortBy}
             onChange={(sortBy) =>
-              setFilters({
-                ...filters,
+              updateFilters({
                 sortBy: sortBy as 'score' | 'name' | 'createdAt' | 'updatedAt',
               })
             }
@@ -160,24 +169,33 @@ export const LeadsTable = ({
             label="Sort Order"
             value={filters.sortOrder}
             onChange={(sortOrder) =>
-              setFilters({
-                ...filters,
+              updateFilters({
                 sortOrder: sortOrder as 'asc' | 'desc',
               })
             }
           />
         </div>
         <div className="flex-1">
-          <Button onClick={() => clearFilters()}>Clear Filters</Button>
+          <Button size="md" onClick={() => clearFilters()}>
+            Clear Filters
+          </Button>
         </div>
       </div>
-      <Table
-        data={filteredLeads}
-        columns={leadColumns}
-        loading={loading}
-        emptyMessage="No leads found"
-        onRowClick={(lead) => onViewLead?.(lead.id)}
-      />
+      <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
+        <Table
+          data={leads}
+          columns={leadColumns}
+          loading={loading}
+          emptyMessage={isEmpty ? 'No leads found' : error?.message}
+          onRowClick={(lead) => onViewLead?.(lead.id)}
+        />
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.total}
+          onPageChange={changePage}
+        />
+      </div>
     </>
   );
 };
