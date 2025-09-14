@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { usePagination } from '../../hooks/usePagination';
+import { Pagination } from './Pagination';
 
 export interface TableColumn<T> {
   key: string;
@@ -23,6 +25,14 @@ export const Table = <T extends { id: string }>({
   emptyMessage = 'No data available',
   onRowClick,
 }: TableProps<T>) => {
+  const {
+    currentPage,
+    totalPages,
+    totalItems,
+    paginatedData,
+    handlePageChange,
+  } = usePagination<T>({ data: data });
+
   if (loading) {
     return (
       <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
@@ -64,7 +74,7 @@ export const Table = <T extends { id: string }>({
 
           {/* Body */}
           <tbody className="bg-white divide-y divide-neutral-200">
-            {data.map((item) => (
+            {paginatedData.map((item) => (
               <tr
                 key={item.id}
                 className={`hover:bg-neutral-50 transition-colors ${
@@ -82,6 +92,12 @@ export const Table = <T extends { id: string }>({
           </tbody>
         </table>
       </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 };

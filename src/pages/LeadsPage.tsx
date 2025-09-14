@@ -8,7 +8,6 @@ export const LeadsPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading from JSON
     setTimeout(() => {
       setLeads(leadsData as Lead[]);
       setLoading(false);
