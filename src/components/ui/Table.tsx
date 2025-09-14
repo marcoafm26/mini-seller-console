@@ -1,6 +1,4 @@
 import type { ReactNode } from 'react';
-import { usePagination } from '../../hooks/usePagination';
-import { Pagination } from './Pagination';
 
 export interface TableColumn<T> {
   key: string;
@@ -25,14 +23,6 @@ export const Table = <T extends { id: string }>({
   emptyMessage = 'No data available',
   onRowClick,
 }: TableProps<T>) => {
-  const {
-    currentPage,
-    totalPages,
-    totalItems,
-    paginatedData,
-    handlePageChange,
-  } = usePagination<T>({ data: data });
-
   if (loading) {
     return (
       <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
@@ -55,49 +45,41 @@ export const Table = <T extends { id: string }>({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-neutral-200">
-          {/* Header */}
-          <thead className="bg-neutral-50">
-            <tr>
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-neutral-200">
+        {/* Header */}
+        <thead className="bg-neutral-50">
+          <tr>
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                className={`px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider ${column.width || ''}`}
+              >
+                {column.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        {/* Body */}
+        <tbody className="bg-white divide-y divide-neutral-200">
+          {data.map((item) => (
+            <tr
+              key={item.id}
+              className={`hover:bg-neutral-50 transition-colors ${
+                onRowClick ? 'cursor-pointer' : ''
+              }`}
+              onClick={() => onRowClick?.(item)}
+            >
               {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={`px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider ${column.width || ''}`}
-                >
-                  {column.header}
-                </th>
+                <td key={column.key} className="px-6 py-4 whitespace-nowrap">
+                  {column.render(item)}
+                </td>
               ))}
             </tr>
-          </thead>
-
-          {/* Body */}
-          <tbody className="bg-white divide-y divide-neutral-200">
-            {paginatedData.map((item) => (
-              <tr
-                key={item.id}
-                className={`hover:bg-neutral-50 transition-colors ${
-                  onRowClick ? 'cursor-pointer' : ''
-                }`}
-                onClick={() => onRowClick?.(item)}
-              >
-                {columns.map((column) => (
-                  <td key={column.key} className="px-6 py-4 whitespace-nowrap">
-                    {column.render(item)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        onPageChange={handlePageChange}
-      />
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

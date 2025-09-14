@@ -35,6 +35,12 @@ export interface LeadFilters {
   dateRange: '1d' | '7d' | '30d' | '1y' | 'All';
   sortBy: 'score' | 'name' | 'createdAt' | 'updatedAt';
   sortOrder: 'asc' | 'desc';
+  currentPage: number;
+  totalPages: number;
+  total: number;
+  limit: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
 // API Response types
