@@ -3,6 +3,7 @@ import type { Lead, LeadStatus } from '../../interfaces/lead';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { FilterSelect } from '../ui/FilterSelect';
+import { LeadCard } from '../ui/LeadCard';
 import { Pagination } from '../ui/Pagination';
 import { SearchInput } from '../ui/SearchInput';
 import type { TableColumn } from '../ui/Table';
@@ -141,8 +142,9 @@ export const LeadsTable = ({
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-wrap items-end gap-4 px-6 py-4">
-        <div className="flex-1 min-w-64">
+      <div className="px-4 sm:px-6 py-4 space-y-4">
+        {/* Search - Full width on all screen sizes */}
+        <div className="w-full">
           <SearchInput
             label="Search Leads"
             value={filters.search}
@@ -152,66 +154,77 @@ export const LeadsTable = ({
           />
         </div>
 
-        <div className="flex-none w-40">
-          <FilterSelect
-            options={statusOptions}
-            label="Status"
-            value={filters.status}
-            onChange={(status) =>
-              updateFilters({ status: status as LeadStatus | 'All' })
-            }
-          />
-        </div>
+        {/* Filter Controls - Grid layout for mobile responsiveness */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="sm:col-span-1">
+            <FilterSelect
+              options={statusOptions}
+              label="Status"
+              value={filters.status}
+              onChange={(status) =>
+                updateFilters({ status: status as LeadStatus | 'All' })
+              }
+            />
+          </div>
 
-        <div className="flex-none w-40">
-          <FilterSelect
-            options={dateRangeOptions}
-            label="Date Range"
-            value={filters.dateRange}
-            onChange={(dateRange) =>
-              updateFilters({
-                dateRange: dateRange as '1d' | '7d' | '30d' | '1y' | 'All',
-              })
-            }
-          />
-        </div>
+          <div className="sm:col-span-1">
+            <FilterSelect
+              options={dateRangeOptions}
+              label="Date Range"
+              value={filters.dateRange}
+              onChange={(dateRange) =>
+                updateFilters({
+                  dateRange: dateRange as '1d' | '7d' | '30d' | '1y' | 'All',
+                })
+              }
+            />
+          </div>
 
-        <div className="flex-none w-40">
-          <FilterSelect
-            options={sortByOptions}
-            label="Sort By"
-            value={filters.sortBy}
-            onChange={(sortBy) =>
-              updateFilters({
-                sortBy: sortBy as 'score' | 'name' | 'createdAt' | 'updatedAt',
-              })
-            }
-          />
-        </div>
+          <div className="sm:col-span-1 lg:col-span-1">
+            <FilterSelect
+              options={sortByOptions}
+              label="Sort By"
+              value={filters.sortBy}
+              onChange={(sortBy) =>
+                updateFilters({
+                  sortBy: sortBy as
+                    | 'score'
+                    | 'name'
+                    | 'createdAt'
+                    | 'updatedAt',
+                })
+              }
+            />
+          </div>
 
-        <div className="flex-none w-36">
-          <FilterSelect
-            options={sortOrderOptions}
-            label="Order"
-            value={filters.sortOrder}
-            onChange={(sortOrder) =>
-              updateFilters({
-                sortOrder: sortOrder as 'asc' | 'desc',
-              })
-            }
-          />
-        </div>
+          <div className="sm:col-span-1 lg:col-span-1">
+            <FilterSelect
+              options={sortOrderOptions}
+              label="Order"
+              value={filters.sortOrder}
+              onChange={(sortOrder) =>
+                updateFilters({
+                  sortOrder: sortOrder as 'asc' | 'desc',
+                })
+              }
+            />
+          </div>
 
-        <div className="flex-none">
-          <Button variant="ghost" onClick={clearFilters} className="h-10">
-            Clear Filters
-          </Button>
+          <div className="sm:col-span-2 lg:col-span-4 xl:col-span-1 flex justify-start xl:justify-end items-end">
+            <Button
+              variant="ghost"
+              onClick={clearFilters}
+              className="h-10 w-full sm:w-auto"
+            >
+              Clear Filters
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Results summary */}
-      <div className="px-6">
-        <p className="text-sm text-neutral-600">
+      <div className="px-4 sm:px-6">
+        <p className="text-xs sm:text-sm text-neutral-600">
           {loading ? (
             'Loading leads...'
           ) : pagination.total === 0 ? (
@@ -240,9 +253,9 @@ export const LeadsTable = ({
       </div>
 
       {isEmpty && !loading ? (
-        <div className="px-6 py-12 text-center">
+        <div className="px-4 sm:px-6 py-8 sm:py-12 text-center">
           <svg
-            className="mx-auto h-12 w-12 text-neutral-400"
+            className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-neutral-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -257,10 +270,10 @@ export const LeadsTable = ({
           <h3 className="mt-2 text-sm font-medium text-neutral-900">
             No leads found
           </h3>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-xs sm:text-sm text-neutral-500">
             Try adjusting your filters or create your first lead.
           </p>
-          <div className="mt-6">
+          <div className="mt-4 sm:mt-6">
             <Button variant="primary" onClick={clearFilters}>
               Clear Filters
             </Button>
@@ -268,7 +281,8 @@ export const LeadsTable = ({
         </div>
       ) : (
         <>
-          <div className="overflow-hidden">
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-hidden">
             <Table
               data={leads}
               columns={leadColumns}
@@ -276,6 +290,17 @@ export const LeadsTable = ({
               emptyMessage="No leads found with the current filters"
               onRowClick={(lead) => onViewLead?.(lead.id)}
             />
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="sm:hidden px-4 space-y-3">
+            {leads.map((lead) => (
+              <LeadCard
+                key={lead.id}
+                lead={lead}
+                onClick={(lead) => onViewLead?.(lead.id)}
+              />
+            ))}
           </div>
 
           {pagination.totalPages > 1 && (

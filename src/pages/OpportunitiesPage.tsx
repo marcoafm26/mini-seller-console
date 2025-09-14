@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { getOpportunities } from '../api/opportunities';
+import { getOpportunities, updateOpportunity } from '../api/opportunities';
 import { OpportunitiesTable } from '../components/opportunities/OpportunitiesTable';
+import { OpportunityDetailPanel } from '../components/opportunities/OpportunityDetailPanel';
 import type { ApiError } from '../interfaces/api/error';
 import type { Opportunity } from '../interfaces/opportunity';
 
@@ -8,6 +9,11 @@ export const OpportunitiesPage = () => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
+
+  // Panel state
+  const [selectedOpportunity, setSelectedOpportunity] =
+    useState<Opportunity | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const fetchOpportunities = async () => {
     setLoading(true);
@@ -38,8 +44,55 @@ export const OpportunitiesPage = () => {
   }, []);
 
   const handleViewOpportunity = (opportunityId: string) => {
-    console.log('View opportunity:', opportunityId);
-    // TODO: Implement opportunity detail view
+    const opportunity = opportunities.find((o) => o.id === opportunityId);
+    if (opportunity) {
+      setSelectedOpportunity(opportunity);
+      setIsPanelOpen(true);
+    }
+  };
+
+  const handleClosePanel = () => {
+    setIsPanelOpen(false);
+    setSelectedOpportunity(null);
+  };
+
+  const handleUpdateOpportunity = async (
+    opportunityId: string,
+    updates: Partial<
+      Pick<Opportunity, 'name' | 'stage' | 'amount' | 'accountName'>
+    >
+  ) => {
+    try {
+      const result = await updateOpportunity(opportunityId, updates);
+
+      if (result.success) {
+        // Update opportunities list with optimistic update
+        setOpportunities((prev) =>
+          prev.map((opp) =>
+            opp.id === opportunityId
+              ? { ...opp, ...updates, updatedAt: new Date().toISOString() }
+              : opp
+          )
+        );
+
+        // Update selected opportunity if it's the updated one
+        if (selectedOpportunity && selectedOpportunity.id === opportunityId) {
+          setSelectedOpportunity((prev) =>
+            prev
+              ? { ...prev, ...updates, updatedAt: new Date().toISOString() }
+              : null
+          );
+        }
+
+        return true;
+      } else {
+        console.error('Failed to update opportunity:', result.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('Failed to update opportunity:', error);
+      return false;
+    }
   };
 
   const handleRefresh = () => {
@@ -67,14 +120,14 @@ export const OpportunitiesPage = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-neutral-900 mb-2">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-2">
             Opportunities
           </h1>
-          <p className="text-neutral-600">
+          <p className="text-sm sm:text-base text-neutral-600">
             Track and manage your sales opportunities
           </p>
         </div>
@@ -107,43 +160,51 @@ export const OpportunitiesPage = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-soft">
-            <div className="text-2xl font-bold text-neutral-900">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-soft col-span-2 sm:col-span-1">
+            <div className="text-xl sm:text-2xl font-bold text-neutral-900">
               {statsData.total}
             </div>
-            <div className="text-neutral-600">Total Opportunities</div>
+            <div className="text-xs sm:text-sm text-neutral-600">
+              Total Opportunities
+            </div>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-soft">
-            <div className="text-2xl font-bold text-blue-600">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-soft">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600">
               {statsData.prospecting}
             </div>
-            <div className="text-neutral-600">Prospecting</div>
+            <div className="text-xs sm:text-sm text-neutral-600">
+              Prospecting
+            </div>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-soft">
-            <div className="text-2xl font-bold text-yellow-600">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-soft">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-600">
               {statsData.qualified}
             </div>
-            <div className="text-neutral-600">Qualified</div>
+            <div className="text-xs sm:text-sm text-neutral-600">Qualified</div>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-soft">
-            <div className="text-2xl font-bold text-green-600">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-soft">
+            <div className="text-xl sm:text-2xl font-bold text-green-600">
               {statsData.closedWon}
             </div>
-            <div className="text-neutral-600">Closed Won</div>
+            <div className="text-xs sm:text-sm text-neutral-600">
+              Closed Won
+            </div>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-soft">
-            <div className="text-2xl font-bold text-success-700">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-soft col-span-2 sm:col-span-1">
+            <div className="text-xl sm:text-2xl font-bold text-success-700">
               ${(statsData.totalValue / 1000).toFixed(0)}k
             </div>
-            <div className="text-neutral-600">Total Value</div>
+            <div className="text-xs sm:text-sm text-neutral-600">
+              Total Value
+            </div>
           </div>
         </div>
 
         {/* Opportunities Table */}
-        <div className="bg-white rounded-2xl shadow-soft">
-          <div className="px-6 py-4">
-            <h2 className="text-xl font-semibold text-neutral-900">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-soft">
+          <div className="px-4 sm:px-6 py-4">
+            <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
               All Opportunities
             </h2>
           </div>
@@ -156,6 +217,15 @@ export const OpportunitiesPage = () => {
           />
         </div>
       </div>
+
+      {/* Opportunity Detail Panel */}
+      <OpportunityDetailPanel
+        opportunity={selectedOpportunity}
+        isOpen={isPanelOpen}
+        onClose={handleClosePanel}
+        onUpdateOpportunity={handleUpdateOpportunity}
+        loading={loading}
+      />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import type {
   OpportunityStage,
 } from '../../interfaces/opportunity';
 import { Button } from '../ui/Button';
+import { OpportunityCard } from '../ui/OpportunityCard';
 import type { TableColumn } from '../ui/Table';
 import { Table } from '../ui/Table';
 import { formatCurrency, formatDate } from '../utils/formatting';
@@ -175,8 +176,8 @@ export const OpportunitiesTable = ({
         </p>
       </div>
 
-      {/* Table */}
-      <div className="overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden sm:block overflow-hidden">
         <Table
           data={opportunities}
           columns={opportunityColumns}
@@ -186,9 +187,20 @@ export const OpportunitiesTable = ({
         />
       </div>
 
+      {/* Mobile Card View */}
+      <div className="sm:hidden px-4 sm:px-6 space-y-3">
+        {opportunities.map((opportunity) => (
+          <OpportunityCard
+            key={opportunity.id}
+            opportunity={opportunity}
+            onClick={(opportunity) => onViewOpportunity?.(opportunity.id)}
+          />
+        ))}
+      </div>
+
       {/* Refresh Button */}
       {onRefresh && !loading && (
-        <div className="px-6 py-4 border-t border-neutral-200">
+        <div className="px-4 sm:px-6 py-4 border-t border-neutral-200">
           <Button variant="ghost" onClick={onRefresh}>
             Refresh
           </Button>
