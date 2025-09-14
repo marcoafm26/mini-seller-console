@@ -76,18 +76,15 @@ export const LeadsPage = () => {
         </div>
 
         {/* Simple Leads List */}
-        <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
-          <div className="px-6 py-4 border-b border-neutral-200">
+        <div className="bg-white rounded-2xl shadow-soft">
+          <div className="px-6 py-4">
             <h2 className="text-xl font-semibold text-neutral-900">Leads</h2>
           </div>
-
-          <div className="divide-y divide-neutral-200">
-            <LeadsTable
-              leads={leads}
-              loading={loading}
-              onViewLead={handleViewLead}
-            />
-          </div>
+          <LeadsTable
+            leads={leads}
+            loading={loading}
+            onViewLead={handleViewLead}
+          />
         </div>
       </div>
     </div>
